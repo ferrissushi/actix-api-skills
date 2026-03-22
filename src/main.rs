@@ -1,31 +1,41 @@
-use std::sync::Mutex;
 
-use actix_web::{
-    web::{get, Data},
-    App, HttpServer, Responder,
-};
+use actix_web::Responder;
 
-struct AppState {
-    counter: Mutex<i32>,
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct User {
+    username: String,
+    password: Option<String>,
+    age: u8,
+    sexe: Sexe,
 }
 
-async fn index(data: Data<AppState>) -> impl Responder {
-    let mut counter = data.counter.lock().unwrap();
-    *counter += 1;
-    format!("{counter}")
+impl Default for User {
+    fn default() -> Self {
+        Self {
+            username: "undefined".to_string(),
+            password: Option::None,
+            age: 1,
+            sexe: Default::default(),
+        }
+    }
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let counter = Data::new(AppState {
-        counter: Mutex::new(0),
-    });
-    HttpServer::new(move || {
-        App::new()
-            .app_data(counter.clone())
-            .route("/", get().to(index))
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Sexe {
+    Male,
+    Female,
+    Other,
+}
+
+impl Default for Sexe {
+    fn default() -> Self {
+        Self::Male
+    }
+}
+
+const USERS: Vec<User> = Vec::new();
+
+async fn get_users() -> impl Responder {
+    USERS
 }
