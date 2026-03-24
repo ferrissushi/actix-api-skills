@@ -1,23 +1,24 @@
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use serde::{Deserialize, Serialize};
+use actix_web::{main, post, web::Json, App, HttpResponse, HttpServer, Responder};
+use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Serialize)]
-struct QueryParam {
-    page: i32,
-    limit: i32,
+#[derive(Deserialize, Debug)]
+struct User {
+    username: String,
+    password: String,
 }
 
-#[get("/hello")]
-async fn hello(pagination: web::Query<QueryParam>) -> impl Responder {
-    let page = pagination.page;
-    let limit = pagination.limit;
-    let msg = format!("Page is {} and limit is {}", page, limit);
-    HttpResponse::Ok().body(msg)
+#[post("/users")]
+async fn create_user(user: Json<User>) -> impl Responder {
+    let msg = format!(
+        "User credentials: {} with password {}",
+        user.username, user.password
+    );
+    HttpResponse::Created().body(msg)
 }
 
-#[actix_web::main]
+#[main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(hello))
+    HttpServer::new(|| App::new().service(create_user))
         .bind("0.0.0.0:8080")?
         .run()
         .await
