@@ -14,6 +14,7 @@ async fn main() -> std::io::Result<()> {
         App::new().service(web::scope("/api").route("/health", web::get().to(health)))
     })
     .workers(4)
+    .shutdown_timeout(100)
     .bind("127.0.0.1:8080")?
     .run()
     .await
