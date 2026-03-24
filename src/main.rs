@@ -26,8 +26,14 @@ async fn create_user(users: Data<Mutex<Vec<User>>>, user: Json<User>) -> impl Re
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(get_users).service(create_user))
-        .bind("0.0.0.0:8080")?
-        .run()
-        .await
+    let users: Data<Mutex<Vec<User>>> = Data::new(Mutex::new(vec![]));
+    HttpServer::new(move || {
+        App::new()
+            .app_data(users.clone())
+            .service(get_users)
+            .service(create_user)
+    })
+    .bind("0.0.0.0:8080")?
+    .run()
+    .await
 }
