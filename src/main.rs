@@ -1,36 +1,32 @@
-use actix_web::{main, post, web::Json, App, HttpResponse, HttpServer, Responder, get};
+use std::sync::Mutex;
+
+use actix_web::{
+    get, post,
+    web::{Data, Json},
+    App, HttpResponse, HttpServer, Responder,
+};
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 struct User {
-    username: String,
-    password: String,
-}
-
-impl Default for User {
-    fn default() -> Self {
-        Self { username: "John".to_string(), password: "        ".to_string()}
-    }
-}
-
-#[post("/users")]
-async fn create_user(user: Json<User>) -> impl Responder {
-    let msg = format!(
-        "User credentials: {} with password {}",
-        user.username, user.password
-    );
-    HttpResponse::Created().body(msg)
+    username: Mutex<String>,
+    password: Mutex<String>,
 }
 
 #[get("/users")]
-async fn get_user() -> impl Responder {
-    let user: User = Default::default();
-    HttpResponse::Ok().json(user)
+async fn get_users(users: Data<Mutex<Vec<User>>>) -> impl Responder {
+    HttpResponse::Ok().json(users)
 }
 
-#[main]
+#[post("/users")]
+async fn create_user(users: Data<Mutex<Vec<User>>>, user: Json<User>) -> impl Responder {
+    users.lock().unwrap().push(user.into_inner());
+    HttpResponse::Created().body("user created")
+}
+
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(create_user).service(get_user))
+    HttpServer::new(|| App::new().service(get_users).service(create_user))
         .bind("0.0.0.0:8080")?
         .run()
         .await
