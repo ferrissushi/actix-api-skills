@@ -1,36 +1,24 @@
-use actix_web::{
-    get, main,
-    web::{self},
-    App, HttpResponse, HttpServer, Responder,
-};
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use serde::{Deserialize, Serialize};
 
-async fn health() -> impl Responder {
-    HttpResponse::Ok()
+#[derive(Debug, Deserialize, Serialize)]
+struct QueryParam {
+    page: i32,
+    limit: i32,
 }
 
 #[get("/hello")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello")
-}
-
-#[get("/hello/{name}")]
-async fn greeting(path: web::Path<String>) -> impl Responder {
-    let name = path.into_inner();
-    let msg = format!("Hello {}", name);
+async fn hello(pagination: web::Query<QueryParam>) -> impl Responder {
+    let page = pagination.page;
+    let limit = pagination.limit;
+    let msg = format!("Page is {} and limit is {}", page, limit);
     HttpResponse::Ok().body(msg)
 }
 
-#[main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(web::scope("/api").route("/health", web::get().to(health)))
-            .service(hello)
-            .service(greeting)
-    })
-    .workers(4)
-    .shutdown_timeout(100)
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+    HttpServer::new(|| App::new().service(hello))
+        .bind("0.0.0.0:8080")?
+        .run()
+        .await
 }
