@@ -12,6 +12,10 @@ async fn not_allowed() -> impl Responder {
     HttpResponse::MethodNotAllowed()
 }
 
+async fn hello() -> impl Responder {
+    HttpResponse::Ok().body("Hello")
+}
+
 fn config(cfg: &mut ServiceConfig) {
     cfg.service(
         web::resource("/path")
@@ -20,10 +24,18 @@ fn config(cfg: &mut ServiceConfig) {
     );
 }
 
+fn scoped_config(cfg: &mut ServiceConfig) {
+    cfg.service(web::resource("/hello").route(get().to(hello)));
+}
+
 #[main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().configure(config))
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    HttpServer::new(|| {
+        App::new()
+            .configure(config)
+            .service(web::scope("/api").configure(scoped_config))
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
